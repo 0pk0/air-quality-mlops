@@ -1,0 +1,32 @@
+{
+  "model_type": "random_forest",
+  "training_date": "2025-09-20T16:19:18.132296",
+  "training_samples": 129,
+  "test_samples": 33,
+  "features": [
+    "temperature",
+    "pressure",
+    "humidity",
+    "wind_speed",
+    "day_of_week",
+    "month",
+    "latitude",
+    "longitude",
+    "city_Delhi",
+    "city_London",
+    "city_Tokyo",
+    "pm2_5_lag1",
+    "pm2_5_ma3",
+    "pm2_5_ma7"
+  ],
+  "metrics": {
+    "train_rmse": 1.4746958057443047,
+    "train_mae": 1.2028188562449615,
+    "test_rmse": 3.622312671999574,
+    "test_mae": 3.0684364213816524,
+    "train_r2": 0.9873609629612,
+    "test_r2": 0.9394104301869157,
+    "cv_rmse": 3.604180076250066,
+    "cv_rmse_std": 1.81518531344579
+  }
+}

@@ -16,8 +16,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class AirQualityPredictor:
-    #Main ML Model
-    def __init__(self) -> None:
+    """Main ML Model for Air Quality Prediction"""
+    def __init__(self, model_dir: str = 'models') -> None:
         self.model_dir = model_dir
         self.model = None
         self.scaler = None
@@ -28,11 +28,11 @@ class AirQualityPredictor:
     def ensure_model_dir(self):
         os.makedirs(self.model_dir, exist_ok=True)
 
-    def prepare_features(self):
+    def prepare_features(self, df: pd.DataFrame):
         feature_columns = ['temperature',
                            'pressure',
                            'humidity',
-                           'wind_speed','day of week',
+                           'wind_speed','day_of_week',
                            'month', 'latitude', 'longitude']
 
         df_processed = df.copy()
@@ -49,14 +49,14 @@ class AirQualityPredictor:
 
         # Update feature columns
         city_cols = [col for col in df_processed.columns if col.startswith('city_')]
-        feature_cols.extend(city_cols)
-        feature_cols.extend(['pm2_5_lag1', 'pm2_5_ma3', 'pm2_5_ma7'])
+        feature_columns.extend(city_cols)
+        feature_columns.extend(['pm2_5_lag1', 'pm2_5_ma3', 'pm2_5_ma7'])
 
         # Remove rows with NaN values (due to lag features)
         df_processed = df_processed.dropna()
 
-        self.feature_columns = feature_cols
-        logger.info(f"Prepared {len(feature_cols)} features: {feature_cols}")
+        self.feature_columns = feature_columns
+        logger.info(f"Prepared {len(feature_columns)} features: {feature_columns}")
 
         return df_processed
 
@@ -128,13 +128,14 @@ class AirQualityPredictor:
         return metrics
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
-        if self.model is None or self.scalar is None:
+        if self.model is None or self.scaler is None:
             raise ValueError("Model must be trained before predicting")
 
         df_processed = self.prepare_features(df)
         X = df_processed[self.feature_columns]
         X_scaled = self.scaler.transform(X)
-        prediction = self.model.predict(X_scaled)
+        predictions = self.model.predict(X_scaled)
+        return predictions
 
     def save_model(self, model_name: str = 'air_quality_prediction') -> str :
         if self.model is None:
@@ -176,43 +177,43 @@ class AirQualityPredictor:
 
         logger.info(f"Model loaded from: {model_path}")
 
-    def main():
-        try:
-            from core.data_manager import DataManager
-        except ImportError:
-            # Fallback: add src to path
-            import sys
-            import os
-            sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-            from core.data_manager import DataManager
+def main():
+    try:
+        from core.data_manager import DataManager
+    except ImportError:
+        # Fallback: add src to path
+        import sys
+        import os
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+        from core.data_manager import DataManager
 
-        # Generate test data
-        dm = DataManager()
-        df = dm.generate_synthetic_data(60)  # 60 days for better training
-        print(f"✅ Generated data: {df.shape}")
+    # Generate test data
+    dm = DataManager()
+    df = dm.generate_synthetic_data(60)  # 60 days for better training
+    print(f"✅ Generated data: {df.shape}")
 
-        predictor = AirQualityPredictor
+    predictor = AirQualityPredictor()
 
-        metrics_rf = predictor.train_model(df, model_type='random_forest')
+    metrics_rf = predictor.train_model(df, model_type='random_forest')
 
-        print('Random Forest Results:')
-        print(f"   Test RMSE: {metrics_rf['test_rmse']:.2f} µg/m³")
-        print(f"   Test R²: {metrics_rf['test_r2']:.3f}")
-        print(f"   CV RMSE: {metrics_rf['cv_rmse']:.2f} ± {metrics_rf['cv_rmse_std']:.2f}")
+    print('Random Forest Results:')
+    print(f"   Test RMSE: {metrics_rf['test_rmse']:.2f} µg/m³")
+    print(f"   Test R²: {metrics_rf['test_r2']:.3f}")
+    print(f"   CV RMSE: {metrics_rf['cv_rmse']:.2f} ± {metrics_rf['cv_rmse_std']:.2f}")
 
-        model_path = predictor.save_model('random_forest_v1')
+    model_path = predictor.save_model('random_forest_v1')
 
-        recent_data = df.tail(10)
-        predictions = predictor.predict(recent_data)
-        for i, (idx, row) in enumerate(recent_data.iterrows()):
-            print(f"   {row['city']}: Actual={row['pm2_5']:.1f}, Predicted={predictions[i]:.1f} µg/m³")
+    recent_data = df.tail(10)
+    predictions = predictor.predict(recent_data)
+    for i, (idx, row) in enumerate(recent_data.iterrows()):
+        print(f"   {row['city']}: Actual={row['pm2_5']:.1f}, Predicted={predictions[i]:.1f} µg/m³")
 
-        print("\n ML MODEL TEST COMPLETE!")
+    print("\n✅ ML MODEL TEST COMPLETE!")
 
-        return predictor, metrics_rf
+    return predictor, metrics_rf
 
-    if __name__ == "__main__":
-        predictor, metrics = main()
+if __name__ == "__main__":
+    predictor, metrics = main()
 
 
 

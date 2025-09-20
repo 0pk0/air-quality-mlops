@@ -48,6 +48,9 @@ class DataManager:
                 humidity = np.clip(humidity, 30, 90)
 
                 wind_speed = abs(np.random.normal(8,3))
+                
+                # Add atmospheric pressure
+                pressure = 1013.25 + np.random.normal(0, 10)  # Standard pressure with variation
 
                 record = {
                     'city': city['name'],
@@ -55,6 +58,7 @@ class DataManager:
                     'timestamp': current_date,
                     'pm2_5': round(pm25, 2),
                     'temperature': round(temperature, 1),
+                    'pressure': round(pressure, 2),
                     'humidity': round(humidity, 1),
                     'wind_speed': round(wind_speed, 1),
                     'latitude': city['lat'],
